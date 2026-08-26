@@ -1,0 +1,6 @@
+cd ~/Projects/psycedelicai-telegram-bot
+source .venv/bin/activate
+
+cp src/bot.py src/bot.py.before-auto-moderation
+
+python -m py_compile src/bot.py
