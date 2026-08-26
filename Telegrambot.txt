@@ -1,0 +1,933 @@
+## Yes — here is the complete `bot.py` again
+
+This version is designed for your Fedora/Nobara computer and uses:
+
+- Telegram long polling
+- Immediate deletion of high-confidence suspicious links
+- Permanent banning of the sender
+- Private moderator logging
+- No downloading, opening, forwarding, or storing of suspected material
+- Admin-only `/status`, `/unban`, and `/rules` commands
+- Safe message metadata in the log
+
+> **Important:** This is a defensive moderation tool. Configure the blocklist carefully and test it with harmless dummy domains before enabling automatic bans.
+
+---
+
+## 1. Create the script
+
+```bash
+cd ~/telegram-moderator
+nano bot.py
+```
+
+Paste this entire file:
+
+```python
+#!/usr/bin/env python3
+
+"""
+Telegram emergency moderation bot.
+
+Actions for high-confidence matches:
+    1. Delete the message
+    2. Permanently ban the sender
+    3. Log safe metadata to a private moderator chat
+
+The bot does NOT:
+    - Open suspicious links
+    - Download files
+    - Forward illegal material
+    - Store message contents
+    - Upload content to an external service
+
+Test carefully before using automatic bans in a real group.
+"""
+
+import logging
+import os
+import re
+from datetime import datetime, timezone
+from html import escape
+from urllib.parse import urlparse
+
+from telegram import Update
+from telegram.constants import ChatType
+from telegram.error import TelegramError
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
+
+
+# ---------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------
+
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+
+# Put your private moderator-log chat ID here.
+#
+# To discover it:
+#   1. Add the bot to your private moderator group/channel.
+#   2. Send a harmless message there.
+#   3. Temporarily use /status or inspect the update logs.
+#
+# Example:
+# MODERATOR_LOG_CHAT_ID = -1001234567890
+MODERATOR_LOG_CHAT_ID = os.environ.get(
+    "MODERATOR_LOG_CHAT_ID",
+    "",
+).strip()
+
+# Optional: restrict moderation to specific groups.
+#
+# Leave empty to allow the bot to moderate every group where it is an admin.
+#
+# Example:
+# MODERATED_CHAT_IDS = {
+#     -1001234567890,
+#     -1009876543210,
+# }
+MODERATED_CHAT_IDS = set()
+
+
+# ---------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------
+# Detection rules
+# ---------------------------------------------------------------------
+
+# Add only domains that you have independently verified as unacceptable.
+#
+# Do not put illegal files, images, or copied material here.
+# This list should contain domain names or URL patterns only.
+#
+# Example dummy entries:
+#     "known-bad-example.invalid",
+#     "blocked-domain.example",
+#
+BLOCKED_DOMAINS = {
+    # Replace these examples with your own verified blocklist.
+    # "known-bad-example.invalid",
+}
+
+
+# High-confidence terms. These are intentionally conservative.
+#
+# Avoid banning merely because somebody discusses the subject,
+# reports abuse, or quotes a moderation rule. The strongest trigger
+# is a suspicious URL combined with a high-confidence indicator.
+#
+HIGH_CONFIDENCE_TERMS = {
+    # Add carefully verified indicators here if required.
+    # Keep this list private and do not publish it.
+}
+
+
+# Obfuscated URL detection:
+# Converts common forms such as:
+#     hxxp://example[.]com
+#     example dot com
+# into a normalized form for checking.
+#
+# This does not visit the URL.
+def normalize_for_detection(text: str) -> str:
+    value = text.lower()
+
+    replacements = {
+        "hxxp://": "http://",
+        "hxxps://": "https://",
+        "[.]": ".",
+        "(.)": ".",
+        "{.}": ".",
+        " dot ": ".",
+        " DOT ": ".",
+        "[:]": ":",
+        "[://]": "://",
+    }
+
+    for old, new in replacements.items():
+        value = value.replace(old.lower(), new.lower())
+
+    # Remove zero-width characters commonly used to evade filters.
+    value = re.sub(r"[\u200b-\u200f\u2060\ufeff]", "", value)
+
+    # Collapse repeated whitespace.
+    value = re.sub(r"\s+", " ", value)
+
+    return value.strip()
+
+
+def extract_urls(text: str) -> list[str]:
+    """
+    Extract URLs from text without requesting or opening them.
+    """
+    if not text:
+        return []
+
+    # This detects ordinary URLs and common obfuscated variants.
+    pattern = re.compile(
+        r"""
+        (?:
+            https?://
+            |
+            www\.
+        )
+        [^\s<>'"()\[\]{}]+
+        """,
+        re.IGNORECASE | re.VERBOSE,
+    )
+
+    return pattern.findall(text)
+
+
+def get_domain(url: str) -> str:
+    """
+    Parse a domain locally. No network request is made.
+    """
+    candidate = url.strip()
+
+    if candidate.lower().startswith("www."):
+        candidate = "https://" + candidate
+
+    if not re.match(r"^[a-z][a-z0-9+.-]*://", candidate, re.I):
+        candidate = "https://" + candidate
+
+    try:
+        parsed = urlparse(candidate)
+        hostname = parsed.hostname or ""
+        return hostname.lower().rstrip(".")
+    except ValueError:
+        return ""
+
+
+def domain_is_blocked(domain: str) -> bool:
+    """
+    Match the exact domain or a subdomain of a blocked domain.
+    """
+    if not domain:
+        return False
+
+    for blocked in BLOCKED_DOMAINS:
+        blocked = blocked.lower().strip().rstrip(".")
+
+        if domain == blocked:
+            return True
+
+        if domain.endswith("." + blocked):
+            return True
+
+    return False
+
+
+def text_contains_high_confidence_term(text: str) -> bool:
+    """
+    Check text locally without sending it anywhere.
+    """
+    if not text:
+        return False
+
+    normalized = normalize_for_detection(text)
+
+    for term in HIGH_CONFIDENCE_TERMS:
+        if term.lower() in normalized:
+            return True
+
+    return False
+
+
+def classify_message(message) -> tuple[bool, list[str]]:
+    """
+    Return:
+        (should_take_emergency_action, reasons)
+
+    The default policy is conservative:
+      - A blocked domain alone is enough for immediate action.
+      - A high-confidence term requires a URL as well.
+      - Ordinary discussion is not automatically punished.
+    """
+
+    text_parts = []
+
+    if message.text:
+        text_parts.append(message.text)
+
+    if message.caption:
+        text_parts.append(message.caption)
+
+    combined_text = "\n".join(text_parts)
+    normalized_text = normalize_for_detection(combined_text)
+
+    urls = extract_urls(normalized_text)
+    domains = [get_domain(url) for url in urls]
+    domains = [domain for domain in domains if domain]
+
+    reasons = []
+
+    blocked_domains_found = sorted(
+        {
+            domain
+            for domain in domains
+            if domain_is_blocked(domain)
+        }
+    )
+
+    if blocked_domains_found:
+        reasons.append("blocked domain")
+
+    # Only use term-based emergency action when a URL is also present.
+    # This avoids banning people for ordinary conversation or reporting.
+    if urls and text_contains_high_confidence_term(normalized_text):
+        reasons.append("high-confidence indicator with URL")
+
+    should_act = bool(reasons)
+
+    return should_act, reasons
+
+
+# ---------------------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------------------
+
+def is_group_chat(update: Update) -> bool:
+    message = update.effective_message
+
+    if not message or not message.chat:
+        return False
+
+    return message.chat.type in {
+        ChatType.GROUP,
+        ChatType.SUPERGROUP,
+    }
+
+
+def is_moderated_chat(chat_id: int) -> bool:
+    if not MODERATED_CHAT_IDS:
+        return True
+
+    return chat_id in MODERATED_CHAT_IDS
+
+
+def make_message_link(message) -> str | None:
+    """
+    Create a Telegram message link when possible.
+
+    Public groups:
+        https://t.me/groupname/message_id
+
+    Private supergroups:
+        https://t.me/c/internal_id/message_id
+    """
+
+    chat = message.chat
+
+    if getattr(chat, "username", None):
+        return f"https://t.me/{chat.username}/{message.message_id}"
+
+    chat_id_string = str(chat.id)
+
+    if chat_id_string.startswith("-100"):
+        internal_id = chat_id_string[4:]
+        return f"https://t.me/c/{internal_id}/{message.message_id}"
+
+    return None
+
+
+def safe_user_label(user) -> str:
+    if not user:
+        return "Unknown user"
+
+    username = f"@{user.username}" if user.username else "(no username)"
+    display_name = user.full_name or "(no display name)"
+
+    return f"{display_name} {username}"
+
+
+async def send_moderator_log(
+    context: ContextTypes.DEFAULT_TYPE,
+    message,
+    reasons: list[str],
+    action_result: str,
+) -> None:
+    """
+    Send safe metadata only.
+
+    No message text, media, file IDs, or suspicious content is logged.
+    """
+
+    if not MODERATOR_LOG_CHAT_ID:
+        logger.warning(
+            "MODERATOR_LOG_CHAT_ID is not configured; "
+            "moderator alert was not sent."
+        )
+        return
+
+    user = message.from_user
+    chat = message.chat
+    link = make_message_link(message)
+
+    timestamp = datetime.now(timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
+
+    user_id = user.id if user else "unknown"
+    chat_title = escape(chat.title or "(unnamed chat)")
+    user_label = escape(safe_user_label(user))
+    reason_text = escape(", ".join(reasons))
+    link_text = escape(link) if link else "(no message link available)"
+
+    log_text = (
+        "⚠️ <b>Emergency moderation action</b>\n\n"
+        f"<b>Time:</b> {timestamp}\n"
+        f"<b>Chat:</b> {chat_title}\n"
+        f"<b>Chat ID:</b> <code>{chat.id}</code>\n"
+        f"<b>User:</b> {user_label}\n"
+        f"<b>User ID:</b> <code>{user_id}</code>\n"
+        f"<b>Message ID:</b> <code>{message.message_id}</code>\n"
+        f"<b>Reason:</b> {reason_text}\n"
+        f"<b>Action:</b> {escape(action_result)}\n"
+        f"<b>Message link:</b> {link_text}\n\n"
+        "The bot did not open, download, forward, or store the content."
+    )
+
+    try:
+        await context.bot.send_message(
+            chat_id=MODERATOR_LOG_CHAT_ID,
+            text=log_text,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    except TelegramError:
+        logger.exception("Could not send moderator log message.")
+
+
+# ---------------------------------------------------------------------
+# Main moderation handler
+# ---------------------------------------------------------------------
+
+async def moderate_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    message = update.effective_message
+
+    if not message:
+        return
+
+    if not is_group_chat(update):
+        return
+
+    if not is_moderated_chat(message.chat.id):
+        return
+
+    # Do not moderate messages from other bots.
+    if message.from_user and message.from_user.is_bot:
+        return
+
+    # Do not take automatic action against anonymous administrators
+    # or channel senders where there is no normal user identity.
+    if not message.from_user:
+        logger.info(
+            "Skipping message without a normal user identity: %s",
+            message.message_id,
+        )
+        return
+
+    should_act, reasons = classify_message(message)
+
+    if not should_act:
+        return
+
+    user = message.from_user
+    action_results = []
+
+    # First delete the message.
+    try:
+        await context.bot.delete_message(
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+        )
+        action_results.append("message deleted")
+        logger.warning(
+            "Deleted suspicious message %s from user %s in chat %s",
+            message.message_id,
+            user.id,
+            message.chat.id,
+        )
+    except TelegramError as error:
+        action_results.append("message deletion failed")
+        logger.error("Could not delete message: %s", error)
+
+    # Then permanently ban the sender.
+    #
+    # revoke_messages=True prevents the user's previous messages from
+    # remaining visible where Telegram permits that operation.
+    try:
+        await context.bot.ban_chat_member(
+            chat_id=message.chat.id,
+            user_id=user.id,
+            revoke_messages=True,
+        )
+        action_results.append("user permanently banned")
+        logger.warning(
+            "Banned user %s from chat %s",
+            user.id,
+            message.chat.id,
+        )
+    except TelegramError as error:
+        action_results.append("ban failed")
+        logger.error("Could not ban user: %s", error)
+
+    await send_moderator_log(
+        context=context,
+        message=message,
+        reasons=reasons,
+        action_result=", ".join(action_results),
+    )
+
+
+# ---------------------------------------------------------------------
+# Admin commands
+# ---------------------------------------------------------------------
+
+async def admin_only(update: Update, context) -> bool:
+    """
+    Return True only when the command sender is an administrator
+    in the current group.
+    """
+
+    message = update.effective_message
+
+    if not message or not update.effective_user:
+        return False
+
+    if message.chat.type not in {
+        ChatType.GROUP,
+        ChatType.SUPERGROUP,
+    }:
+        return False
+
+    try:
+        member = await context.bot.get_chat_member(
+            chat_id=message.chat.id,
+            user_id=update.effective_user.id,
+        )
+
+        return member.status in {
+            "administrator",
+            "creator",
+        }
+
+    except TelegramError:
+        return False
+
+
+async def status_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not await admin_only(update, context):
+        return
+
+    blocked_count = len(BLOCKED_DOMAINS)
+    term_count = len(HIGH_CONFIDENCE_TERMS)
+
+    await update.effective_message.reply_text(
+        "✅ Moderation bot is running.\n\n"
+        f"Blocked domains configured: {blocked_count}\n"
+        f"High-confidence indicators configured: {term_count}\n"
+        "Automatic action: delete message and permanently ban sender.\n"
+        "The bot does not open or download links."
+    )
+
+
+async def rules_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not await admin_only(update, context):
+        return
+
+    await update.effective_message.reply_text(
+        "Moderation rules:\n\n"
+        "• High-confidence blocked links are deleted immediately.\n"
+        "• The sender is permanently banned.\n"
+        "• Safe metadata is sent to the moderator log.\n"
+        "• The bot does not open, download, forward, or store content.\n"
+        "• Ordinary discussion is not automatically punished."
+    )
+
+
+async def unban_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not await admin_only(update, context):
+        return
+
+    if not context.args:
+        await update.effective_message.reply_text(
+            "Usage:\n/unban USER_ID"
+        )
+        return
+
+    try:
+        user_id = int(context.args[0])
+    except ValueError:
+        await update.effective_message.reply_text(
+            "USER_ID must be a numeric Telegram user ID."
+        )
+        return
+
+    try:
+        await context.bot.unban_chat_member(
+            chat_id=update.effective_message.chat.id,
+            user_id=user_id,
+            only_if_banned=True,
+        )
+
+        await update.effective_message.reply_text(
+            f"User {user_id} has been unbanned."
+        )
+
+    except TelegramError as error:
+        logger.error("Could not unban user: %s", error)
+        await update.effective_message.reply_text(
+            "The unban operation failed. Check the user ID and bot permissions."
+        )
+
+
+async def start_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    await update.effective_message.reply_text(
+        "Moderation bot online."
+    )
+
+
+# ---------------------------------------------------------------------
+# Error handling
+# ---------------------------------------------------------------------
+
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    logger.exception(
+        "Unhandled Telegram error:",
+        exc_info=context.error,
+    )
+
+
+# ---------------------------------------------------------------------
+# Startup
+# ---------------------------------------------------------------------
+
+def validate_configuration() -> None:
+    if not BOT_TOKEN:
+        raise RuntimeError(
+            "TELEGRAM_BOT_TOKEN is missing."
+        )
+
+    if not MODERATOR_LOG_CHAT_ID:
+        logger.warning(
+            "MODERATOR_LOG_CHAT_ID is empty. "
+            "The bot will moderate, but cannot send private alerts."
+        )
+
+    if not BLOCKED_DOMAINS and not HIGH_CONFIDENCE_TERMS:
+        logger.warning(
+            "No detection rules are configured. "
+            "The bot will not automatically act on messages."
+        )
+
+
+def main() -> None:
+    validate_configuration()
+
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
+    )
+
+    # Commands
+    application.add_handler(
+        CommandHandler("start", start_command)
+    )
+
+    application.add_handler(
+        CommandHandler("status", status_command)
+    )
+
+    application.add_handler(
+        CommandHandler("rules", rules_command)
+    )
+
+    application.add_handler(
+        CommandHandler("unban", unban_command)
+    )
+
+    # Text, captions, files, photos, videos, and other messages.
+    #
+    # The handler only inspects text and captions locally.
+    # It does not download media.
+    application.add_handler(
+        MessageHandler(
+            filters.ALL & ~filters.COMMAND,
+            moderate_message,
+        )
+    )
+
+    application.add_error_handler(error_handler)
+
+    logger.info("Telegram moderation bot starting.")
+    logger.info("Long polling is active.")
+
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=False,
+    )
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+## 2. Install the required library
+
+```bash
+cd ~/telegram-moderator
+
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install --upgrade python-telegram-bot
+```
+
+Check the script for syntax errors:
+
+```bash
+python -m py_compile bot.py
+```
+
+If there is no output, the syntax check passed.
+
+---
+
+## 3. Configure the token and log chat
+
+Create the environment file:
+
+```bash
+mkdir -p ~/.config/telegram-moderator
+chmod 700 ~/.config/telegram-moderator
+
+nano ~/.config/telegram-moderator/environment
+```
+
+Put this inside:
+
+```ini
+TELEGRAM_BOT_TOKEN=PUT_YOUR_BOT_TOKEN_HERE
+MODERATOR_LOG_CHAT_ID=PUT_YOUR_PRIVATE_LOG_CHAT_ID_HERE
+```
+
+Then secure it:
+
+```bash
+chmod 600 ~/.config/telegram-moderator/environment
+```
+
+Never paste the token into chat or commit this file to Git.
+
+---
+
+## 4. Configure your blocklist
+
+Open the script:
+
+```bash
+nano ~/telegram-moderator/bot.py
+```
+
+Find:
+
+```python
+BLOCKED_DOMAINS = {
+    # Replace these examples with your own verified blocklist.
+}
+```
+
+Add only domains you have verified, for example:
+
+```python
+BLOCKED_DOMAINS = {
+    "known-bad-example.invalid",
+    "another-blocked-domain.example",
+}
+```
+
+The bot checks domains locally. It does **not** visit them.
+
+Leave this empty unless you have carefully decided what should trigger automatic action:
+
+```python
+HIGH_CONFIDENCE_TERMS = {
+}
+```
+
+A domain-based blocklist is safer than banning users merely because a message contains a particular word.
+
+---
+
+## 5. Run it manually first
+
+```bash
+cd ~/telegram-moderator
+source .venv/bin/activate
+
+set -a
+source ~/.config/telegram-moderator/environment
+set +a
+
+python bot.py
+```
+
+You should see something like:
+
+```text
+Telegram moderation bot starting.
+Long polling is active.
+```
+
+Press `Ctrl+C` to stop it.
+
+---
+
+## 6. Run it automatically with systemd
+
+Create the service:
+
+```bash
+mkdir -p ~/.config/systemd/user
+
+nano ~/.config/systemd/user/telegram-moderator.service
+```
+
+Paste:
+
+```ini
+[Unit]
+Description=Telegram moderation bot
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/telegram-moderator
+EnvironmentFile=%h/.config/telegram-moderator/environment
+ExecStart=%h/telegram-moderator/.venv/bin/python %h/telegram-moderator/bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+```
+
+Enable it:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now telegram-moderator.service
+```
+
+Check it:
+
+```bash
+systemctl --user status telegram-moderator.service
+```
+
+View live logs:
+
+```bash
+journalctl --user -u telegram-moderator.service -f
+```
+
+To keep it running after you log out:
+
+```bash
+loginctl enable-linger "$USER"
+```
+
+---
+
+## Telegram permissions required
+
+Add the bot to your group and promote it to administrator with:
+
+- **Delete messages**
+- **Ban users**
+- **Restrict members**, if you later add temporary restrictions
+
+Also disable privacy mode through **@BotFather**:
+
+```text
+/setprivacy
+```
+
+Choose your bot, then choose:
+
+```text
+Disable
+```
+
+Without privacy mode being disabled, the bot may not receive ordinary group messages.
+
+---
+
+## Test safely first
+
+Before adding real blocklist entries:
+
+1. Create a harmless dummy domain such as:
+   ```text
+   test-blocked.invalid
+   ```
+2. Add it to `BLOCKED_DOMAINS`.
+3. Post that dummy domain in a test group.
+4. Confirm that:
+   - The message is deleted.
+   - The test account is banned.
+   - A private moderator alert is sent.
+5. Remove the test account’s ban using:
+   ```text
+   /unban USER_ID
+   ```
+
+The bot must be an administrator with the correct permissions, and it cannot ban the group owner or another administrator with equal or higher privileges.
+
+## Important limitation
+
+The script can automatically:
+
+```text
+detect → delete → ban → alert you
+```
+
+It cannot submit a general Telegram abuse report through the Bot API. Keep the moderator log limited to safe metadata such as the chat, user ID, message ID, timestamp, reason, and message link. Do not copy, download, open, or redistribute suspected illegal material.
