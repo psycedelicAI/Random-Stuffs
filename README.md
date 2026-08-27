@@ -4,7 +4,7 @@
 
 Welcome to the less organised corner of **PsycedelicAI**.
 
-This repository is a collection of miscellaneous projects, experiments, prototypes, tests, notes, and digital leftovers created while exploring AI, technology, systems, creativity, and whatever else happened to become interesting at the time.
+This repository is a collection of miscellaneous projects, experiments, custom GPTs, prototypes, tests, notes, and digital leftovers created while exploring AI, technology, systems, creativity, and whatever else became interesting at the time.
 
 Not everything here is connected.
 
@@ -18,13 +18,13 @@ Some things may simply have existed long enough to deserve a place in the archiv
 
 ## 🧠 What is this?
 
-`Random-Stuffs` is a flexible workspace for ideas that are too small, experimental, unfinished, independent, or weird to receive their own repository.
+`Random-Stuffs` is a flexible workspace for ideas that are too small, experimental, unfinished, independent, or unusual to receive their own repository.
 
 It may contain:
 
 - 🧪 experiments
-- 🤖 AI tests
-- 🛠️ small tools
+- 🤖 custom GPTs and AI tools
+- 🛠️ small utilities
 - 📚 notes and documentation
 - 🧩 prototypes
 - 🧠 unfinished concepts
@@ -35,6 +35,18 @@ It may contain:
 Think of it as a digital workshop drawer.
 
 You never know exactly what is inside until you open it.
+
+---
+
+## ⭐ Featured tools
+
+### 🧠 Prompt Engineer Delux
+
+A custom GPT prompt for exploring, improving, testing, and structuring prompts.
+
+It is both a practical tool and an experiment in how AI-assisted prompt engineering can be packaged for reuse.
+
+[Open Prompt Engineer Delux](custom-gpts/Prompt-Engineer-Delux.txt)
 
 ---
 
@@ -108,7 +120,7 @@ PsycedelicAI is a shared human-AI working identity.
 - **Psycedelic** brings human experience, purpose, intuition, values, creativity, and direction.
 - **AI** contributes analysis, structure, research, memory support, documentation, and connections across ideas.
 
-Together, we explore how thoughts, experiments, systems, and unfinished concepts can become something more coherent over time.
+Together, we explore how thoughts, experiments, systems, and unfinished concepts can become more coherent over time.
 
 ---
 
