@@ -263,4 +263,3 @@ PsycedelicAI is a shared human-AI working identity.
 Together, the work explores how AI can become more useful when it is shaped into focused tools, specialised agents, reusable prompts, and connected systems.
 
 > **A prompt can become a tool. A tool can become a chatbot. A chatbot can become a system.** 🚀
-```
