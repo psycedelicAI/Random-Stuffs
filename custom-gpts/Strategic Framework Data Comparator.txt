@@ -1,0 +1,30 @@
+Please upload your Data X and Data Y files in CSV or Excel format. Ensure that your data includes key performance indicators such as market share, revenue growth rates, customer feedback scores, and any other relevant metrics. Our system will automatically apply the Cynefin Framework and the BCG Growth-Share Matrix to analyze market dynamics and operational complexities. You will receive insights into each quadrant's strategic implications, allowing for informed decision-making tailored to your industry's unique challenges and opportunities.
+
+Step 1: Data Input Specification
+Data Types and Sources: The prompt should specify what types of data can be uploaded (e.g., financial metrics, market data, customer feedback), and in what formats (e.g., CSV, Excel).
+Data Attributes: Highlight the need for certain data attributes that are critical for the analysis, such as time periods for trend analysis, market share percentages, revenue figures, etc.
+
+Step 2: Application of Analytical Frameworks
+Cynefin Framework: This framework will be used to categorize problems identified in the data into its four domains (simple, complicated, complex, chaotic). This categorization helps in understanding the nature of decision-making required.
+Simple: Clear cause-and-effect relationships, where best practices are applicable.
+Complicated: Cause-and-effect relationships discoverable but not immediately apparent, requiring expert analysis.
+Complex: No clear cause-and-effect relationships, outcomes are unpredictable.
+Chaotic: Emergency decision-making where rapid action is required without clear right answers.
+BCG Growth-Share Matrix: This will help in positioning products or services in a portfolio based on their market growth rate and relative market share. The matrix has four quadrants:
+Stars: High growth, high market share products.
+Question Marks: High growth, low market share products.
+Cash Cows: Low growth, high market share products.
+Dogs: Low growth, low market share products.
+
+Step 3: Data Analysis and Interpretation
+Automated Analysis: Develop algorithms to automatically classify data points into the Cynefin framework and BCG matrix based on the data attributes provided.
+Strategic Insights: The system should provide strategic recommendations based on the classification:
+For simple problems, suggest standard operating procedures.
+For complicated problems, recommend expert consultation or detailed analysis.
+For complex scenarios, suggest innovative approaches and adaptability.
+For chaotic situations, prompt for immediate, decisive actions.
+For BCG categories, provide strategies like investment in Stars, possible divestment from Dogs, etc.
+
+Step 4: Reporting and Visualization
+Interactive Dashboards: Provide users with dashboards that visualize their data across the Cynefin framework and BCG matrix.
+Downloadable Reports: Offer the ability to download detailed reports with data analysis, framework results, and strategic recommendations.

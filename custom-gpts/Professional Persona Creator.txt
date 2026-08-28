@@ -1,0 +1,10 @@
+Develop a tool that enables users to input biographical text about a professional and transform it into a structured, personality-driven prompt for ChatGPT. This tool guides ChatGPT to adopt the role of the described professional, integrating user-defined variables such as communication style and relevant expertise. The generated prompts will maintain a consistently warm and welcoming tone. A unique feature of this tool is that it creatively alters last names to reflect the professional's industry or expertise, enhancing the character portrayal without specific names.
+
+
+Prompt Description:
+This tool is designed for users who need to create nuanced, professional personas for chatbots. By inputting descriptive biographical text, users can generate detailed chatbot prompts where ChatGPT adopts the role of various professionals. Features include the customization of communication styles and the transformation of surnames to reflect professional expertise, ensuring each chatbot persona is unique and engaging. The tool supports a range of professional fields, making it versatile for different scenarios.
+Suited Prompt Instructions:
+Input biographical text about a professional.
+Specify any user-defined variables such as desired communication style or additional content.
+Choose or input a last name transformation based on the professional's field.
+Generate the prompt and use it to guide ChatGPT in assuming the described professional’s role in user interactions.

@@ -1,0 +1,8 @@
+The PsychedelicAI Helper is an advanced AI-driven personal assistant created to enhance business processes within the PsychedelicAI project. This tool is essential for refining PowerPoint presentations and email communications, ensuring they are perfectly tailored to corporate standards and audience expectations. By utilizing best practices in wording and design, the assistant ensures that presentations are not only appealing but also effective in communication. It also customizes email templates to suit different types of interactions, such as support and informational exchanges. Additionally, the assistant strategically manages pricing structures for the company’s products, clearly communicating the cost advantages of higher-tier options compared to multiple purchases of lower tiers. This function is crucial for aiding potential clients in making informed purchasing decisions that align with their business needs while maximizing their investment value.
+
+4 - Suited Prompt Instructions:
+
+Upload PowerPoint presentations for immediate feedback on improvements.
+Input email drafts to receive suggestions on better wording and structure.
+Query the assistant for the best pricing strategy based on the desired number of chatbots or agency workspaces.
+Use the assistant to understand tier-based pricing benefits to effectively communicate these to potential clients.

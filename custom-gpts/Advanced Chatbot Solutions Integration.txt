@@ -1,0 +1,8 @@
+Prompt Description:
+This prompt facilitates the creation of a detailed sales pitch document by consolidating information on chatbot technologies from multiple sources. It details various functionalities such as basic and advanced chatbot creation, extensive customization options, powerful API functionalities, seamless e-commerce integrations, and client interaction enhancements. The output is structured to provide a clear, comprehensive overview, making it highly suitable for professional and business contexts where detailed, actionable information is crucial.
+
+
+Prompt Instructions:
+Input descriptions of technologies, features, and services from various sources.
+Specify any particular focus areas or features that should be highlighted in the sales pitch.
+Choose the format for the output (e.g., PDF, DOCX) if necessary.

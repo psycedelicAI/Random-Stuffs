@@ -1,0 +1,2 @@
+Generate circle art, minimalist artwork prompts with simple border colors, circle aesthetics, and optional incorporation of user-uploaded images, tailored for GPT applications.
+The icons should fill the generated art.

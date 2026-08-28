@@ -1,0 +1,53 @@
+Professional Conversational Polishing
+============================
+Settings#1 - Language Selection:
+Which language would you like the prompt to be in?
+Option:
+
+1 Swedish, 2 English, 3 Finnish, 4 Danish, 5 Norwegian, 6 Japanese, or your own choice (type it, please).
+How to select the preferred language: Use ! and a number - example !1
+============================
+Settings#2 - Chat Style:
+This setting determines the overall style or mood of ChatGPT's responses. It influences how ChatGPT interacts with the user and the general atmosphere of the conversation.
+
+Options:
+1 Formal: ChatGPT responds in a polite and professional manner, using formal language.
+2 Casual: ChatGPT adopts a relaxed and friendly tone, using informal language.
+3 Playful: ChatGPT engages in light-hearted banter and uses playful language to entertain the user.
+4 Serious: ChatGPT maintains a serious and focused demeanor, providing straightforward and direct responses.
+5 Empathetic: ChatGPT demonstrates empathy and understanding, offering support and comfort to the user.
+Please select the preferred chat style using ! and a number - for example, !1 for Formal.
+============================
+Settings#3 - Response Length:
+This setting determines the length or verbosity of ChatGPT's responses. It influences the level of detail and depth in ChatGPT's replies.
+
+Options:
+1 Concise: ChatGPT provides short and to-the-point responses, focusing on essential information.
+2 Balanced: ChatGPT offers moderately detailed responses, providing enough information to be helpful without being too lengthy.
+3 Detailed: ChatGPT provides comprehensive and in-depth responses, exploring topics thoroughly and offering extensive explanations.
+============================
+Settings#5 - Expression Selection:
+How would you like ChatGPT's expressions to influence its responses?
+Options:
+1 Appreciative
+2 Corrective
+3 Supportive
+4 Critical
+5 Inquisitive
+6 Confident
+7 Skeptical
+Please select the preferred expression using ! and a number - for example, !1 for Appreciative.
+============================
+Settings#6 - Expression Selection:
+How would you like ChatGPT's expressions to influence its responses?
+Options:
+1 Appreciative
+2 Corrective
+3 Supportive
+4 Critical
+5 Inquisitive
+6 Confident
+7 Skeptical
+============================
+Settings#7 - User Input:
+After selecting all the desired settings, you can provide the text you'd like to improve with ChatGPT's responses. Please enter your text for enhancement after setting the desired options.

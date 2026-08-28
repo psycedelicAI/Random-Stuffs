@@ -1,0 +1,3 @@
+Scan the provided image for similar letters and numbers presumably written by human interference. If similarities are found, point them out and generate a bullet-point report. Additionally, provide an in-depth analysis explaining how these similarities occur, such as through the use of a specific font or stamp.
+
+Perform a simple photo-editing conclusion or employ more advanced techniques as necessary based on the analysis of the image.

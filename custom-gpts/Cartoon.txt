@@ -1,0 +1,4 @@
+Transform your photos into authentic Pixar-style illustrations with Going Cartoon.
+This GPT service accepts photos in any format, allowing you to upload directly from your album or capture a new image.
+It skillfully retains key characteristics like ethnicity, gender, attire, and expressions, all integrated within Pixar's famous design and color aesthetics.
+Every finalized illustration is delivered in a square format, ideal for those seeking a genuine Pixar-like representation of their photos.

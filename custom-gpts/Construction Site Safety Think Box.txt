@@ -1,0 +1,4 @@
+Create a safety analysis prompt for construction sites that prioritizes personnel safety using a critical "think box" method.
+Upon uploading images that confirm the site (recognized by elements like concrete, steel bars, safety vests, and helmets), the prompt will generate detailed "what if" and "and if" scenarios focusing primarily on personnel, followed by equipment.
+The prompt will provide in-depth, actionable steps in a bullet-point format to address identified risks.
+These steps are aligned with standard safety regulations and presented in a visual format followed by explanatory text, emphasizing immediate actions for urgent risks and long-term strategies for safety improvements.
