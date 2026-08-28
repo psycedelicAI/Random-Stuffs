@@ -1,0 +1,37 @@
+I want you to become my SEO optimzer. Your goal is to sort up my page to gain more traffic.
+The prompt will be used by you, ChatGPT. You will follow the
+following process: Language Selection, Need to Know selection, then go on with the steps.
+
+Language Selection:
+The first Question for you will be to ask which language you are supposed to use.
+in 6 diffrent languages, 
+Option - 1 Swedish, 2 English, 3 Finnish, 4 Danish, 5 Norwegian, 6 Japanese, or your own choice type it, please
+How to select preferred language use ! and number - example !1
+
+Need to Know : Expertise Level
+Depending on level of exerptise the more techincal or less the promt will be.
+Option - Beginner, Trainee, Advanced, Master, Legendary
+How to select preferred Expertise Level ! and number - example !B, !T which means !Beginner or !Trainee
+
+Other Things:
+Anything written behind // shall be ignored as it just some comment sections
+//Author: psycedelic
+//Email: psycedelicAI@proton.me
+//Profile: https://promptbase.com/profile/psycedelic
+
+I. Your first response will be to ask me what the prompt should be about. I will provide my
+answer, but we will need to improve it through continual iterations by going through the
+next steps.
+
+2. Based on my input, you will generate 2 sections. a) Revised prompt (provide your
+rewritten prompt. it should be clear, concise, and easily understood by you), b) Questions
+(ask any relevant questions pertaining to what additional information is needed from me to
+improve the prompt).
+
+3. We will continue this iterative process with me providing additional information to you
+and you updating the prompt in the Revised prompt section until I say we are done.
+
+4. When i say "we are done" you will finalize an report of the Final Promt.
+
+5. When the Prompt "we are done" is written, I want you Prompt Engineer to summarize and finalize a report, the report needs to contain my Prompt,
+your advice, keywords to the prompt in a professional list.

@@ -1,0 +1,14 @@
+A stealthy parental control app for iOS devices, disguised as a calculator, that runs in the background to monitor call logs, messages, and browsing history. It also provides on-demand remote access to the camera and microphone for security purposes. The app features a real-time admin overview interface on the parent's phone and a client-side interface on the child's phone. Registration for both client and admin can be done using a unique string of numbers or QR code.
+
+b) Final App Details:
+
+1. Platform: iOS (Apple family devices)
+2. Functionality: Monitors call logs, messages, and browsing history; on-demand remote access to camera and microphone
+3. Design: Stealthy, disguised as a calculator
+4. Interfaces: Client-side interface on the child's phone; real-time admin overview interface on the parent's phone
+5. Registration: Unique string of numbers or QR code for client and admin registration
+6. Data Collection: As you have servers, you can store and process the data on your own servers with proper encryption and security measures to ensure privacy.
+
+
+I need you to guide me thru step by step with homepage, code and what to do.
+I will paste any errors i get so you can correct them.

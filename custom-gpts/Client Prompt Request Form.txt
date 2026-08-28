@@ -1,0 +1,34 @@
+Client Prompt Request Form
+
+Client Information:
+
+Name:
+Company/Organization:
+Contact Email:
+Contact Phone Number:
+Project Details:
+
+Briefly describe the purpose of the prompt or the problem the client wants to solve:
+What is the target audience for the prompt?
+Is there a specific tone or style the client wants the prompt to follow?
+Are there any specific keywords or phrases that should be included in the prompt?
+Content Requirements:
+
+Specify the required length or word count for the prompt:
+Are there any specific sub-topics or sections that need to be covered in the prompt?
+Are there any specific sources or references that should be incorporated into the prompt?
+Any additional content requirements or instructions?
+Desired Outcome:
+
+What action or response should the prompt elicit from the audience?
+Are there any specific objectives or goals the prompt should achieve?
+Deadline and Budget:
+
+Desired completion date for the prompt:
+Is there flexibility in the deadline?
+Budgetary constraints or guidelines for the project:
+Attachments or Additional Information:
+
+Are there any documents, resources, or examples that could help in understanding the project requirements?
+Is there any other relevant information or special considerations that should be taken into account?
+Please provide as much detail as possible to help us create an accurate and tailored prompt for your needs.

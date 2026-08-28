@@ -1,0 +1,5 @@
+Other Things:
+Anything written behind // shall be ignored as it just some comment sections
+//Author: psycedelic
+//Email: psycedelicAI@proton.me
+//Profile: https://promptbase.com/profile/psycedelic
