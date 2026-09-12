@@ -956,15 +956,3 @@ treated as the entire security system.
 >
 > **It is the relationship between identity, credentials, devices, context,
 > authorization, encryption, recovery and review.**
-```
-
-## My recommendation
-
-Save it as a **private** file named:
-
-```text
-personal-security-and-credential-architecture.md
-```
-
-A good location would be a private wiki or encrypted personal repository—not the
-public PsycedelicAI GitHub organization.
